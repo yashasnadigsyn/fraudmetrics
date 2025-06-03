@@ -1,5 +1,6 @@
 ## The metrics in this file are based on a given threshold
 import numpy as np
+import math
 
 def get_binary_confusion_matrix(y_true: list, y_pred_proba: list, threshold: float=0.5, pos_label: int=1):
     """
@@ -285,4 +286,32 @@ def get_ber_score(y_true: list, y_pred_proba: list, threshold: list=0.5, pos_lab
     ber_score = float(ber_score)
 
     return ber_score
+
+def get_gmean_score(y_true: list, y_pred_proba: list, threshold: list=0.5, pos_label: int=1):
+    """
+    get_gmean_score(y_true, y_pred_prob, threshold=0.5, pos_label=1)
+
+    Computes the Geometric Mean Score.
+    A measure that aggregates the TNR and TPR is the geometric mean G-mean.
+    G-mean = sqrt(TPR*TNR)
+
+    Args:
+        y_true(list or np.ndarray): True binary labels. Expected values are {0, 1}.
+        y_pred_proba(list or np.ndarray): Predicted probabilities for the positive class. Values should be in the range [0, 1]. Must be the same length as `y_true`.
+        threshold (float, default=0.5): The decision threshold to convert probabilities into binary predictions.
+        pos_label (float, default=1): The label of the positive class in `y_true`.
+
+    Returns:
+        Float (Geometric Mean Score)
+    """  
+
+    ## Get FNR and FPR
+    tpr = get_recall_score(y_true, y_pred_proba, threshold, pos_label)
+    tnr = get_tnr_score(y_true, y_pred_proba, threshold, pos_label)
+
+    ## Compute BER from FNR and FPR
+    gmean_score = math.sqrt(tpr*tnr)
+    gmean_score = float(gmean_score)
+
+    return gmean_score
 
