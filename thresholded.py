@@ -113,7 +113,7 @@ def get_classification_error_score(y_true: list, y_pred_proba: list, threshold: 
     get_classification_error_score(y_true, y_pred_prob, threshold=0.5, pos_label=1)
 
     Computes the missclassification error score. 
-    This function calculates accuracy score (FP + FN) / (TP + FP + FN + TN)
+    This function calculates missclassification error score (FP + FN) / (TP + FP + FN + TN)
 
     Args:
         y_true(list or np.ndarray): True binary labels. Expected values are {0, 1}.
@@ -136,4 +136,153 @@ def get_classification_error_score(y_true: list, y_pred_proba: list, threshold: 
     classification_error_score = float((fp+fn)/(tp+fp+fn+tn))
 
     return classification_error_score
+
+## Column Wise Metrics
+
+def get_recall_score(y_true: list, y_pred_proba: list, threshold: list=0.5, pos_label: int=1):
+    """
+    get_recall_score(y_true, y_pred_prob, threshold=0.5, pos_label=1)
+
+    Computes the True Positive Rate. 
+    This function calculates recall score (TP/(TP + FN))
+
+    Args:
+        y_true(list or np.ndarray): True binary labels. Expected values are {0, 1}.
+        y_pred_proba(list or np.ndarray): Predicted probabilities for the positive class. Values should be in the range [0, 1]. Must be the same length as `y_true`.
+        threshold (float, default=0.5): The decision threshold to convert probabilities into binary predictions.
+        pos_label (float, default=1): The label of the positive class in `y_true`.
+
+    Returns:
+        Float (Recall)
+    """  
+
+    ## Get Binary Confusion Matrix components
+    conf_dict = get_binary_confusion_matrix(y_true, y_pred_proba, threshold, pos_label)
+    
+    ## Compute classification error score and return it
+    tp = conf_dict["tp"]
+    fp = conf_dict["fp"]
+    fn = conf_dict["fn"]
+    tn = conf_dict["tn"]
+    recall_score = float((tp)/(tp+fn))
+
+    return recall_score
+
+def get_tnr_score(y_true: list, y_pred_proba: list, threshold: list=0.5, pos_label: int=1):
+    """
+    get_tnr_score(y_true, y_pred_prob, threshold=0.5, pos_label=1)
+
+    Computes the True Negative Rate. 
+    This function calculates TNR score (TN/(TN + FP))
+
+    Args:
+        y_true(list or np.ndarray): True binary labels. Expected values are {0, 1}.
+        y_pred_proba(list or np.ndarray): Predicted probabilities for the positive class. Values should be in the range [0, 1]. Must be the same length as `y_true`.
+        threshold (float, default=0.5): The decision threshold to convert probabilities into binary predictions.
+        pos_label (float, default=1): The label of the positive class in `y_true`.
+
+    Returns:
+        Float (True Negative Rate)
+    """  
+
+    ## Get Binary Confusion Matrix components
+    conf_dict = get_binary_confusion_matrix(y_true, y_pred_proba, threshold, pos_label)
+    
+    ## Compute classification error score and return it
+    tp = conf_dict["tp"]
+    fp = conf_dict["fp"]
+    fn = conf_dict["fn"]
+    tn = conf_dict["tn"]
+    tnr_score = float((tn)/(tn+fp))
+
+    return tnr_score
+
+def get_fnr_score(y_true: list, y_pred_proba: list, threshold: list=0.5, pos_label: int=1):
+    """
+    get_fnr_score(y_true, y_pred_prob, threshold=0.5, pos_label=1)
+
+    Computes the False Negative Rate. 
+    This function calculates FNR score (FN/(TP + FN))
+
+    Args:
+        y_true(list or np.ndarray): True binary labels. Expected values are {0, 1}.
+        y_pred_proba(list or np.ndarray): Predicted probabilities for the positive class. Values should be in the range [0, 1]. Must be the same length as `y_true`.
+        threshold (float, default=0.5): The decision threshold to convert probabilities into binary predictions.
+        pos_label (float, default=1): The label of the positive class in `y_true`.
+
+    Returns:
+        Float (False Negative Rate)
+    """  
+
+    ## Get Binary Confusion Matrix components
+    conf_dict = get_binary_confusion_matrix(y_true, y_pred_proba, threshold, pos_label)
+    
+    ## Compute classification error score and return it
+    tp = conf_dict["tp"]
+    fp = conf_dict["fp"]
+    fn = conf_dict["fn"]
+    tn = conf_dict["tn"]
+    fnr_score = float((fn)/(tp+fn))
+
+    return fnr_score
+
+def get_fpr_score(y_true: list, y_pred_proba: list, threshold: list=0.5, pos_label: int=1):
+    """
+    get_fpr_score(y_true, y_pred_prob, threshold=0.5, pos_label=1)
+
+    Computes the False Positive Rate. 
+    This function calculates FPR score (FP/(TN + FP))
+
+    Args:
+        y_true(list or np.ndarray): True binary labels. Expected values are {0, 1}.
+        y_pred_proba(list or np.ndarray): Predicted probabilities for the positive class. Values should be in the range [0, 1]. Must be the same length as `y_true`.
+        threshold (float, default=0.5): The decision threshold to convert probabilities into binary predictions.
+        pos_label (float, default=1): The label of the positive class in `y_true`.
+
+    Returns:
+        Float (False Positive Rate)
+    """  
+
+    ## Get Binary Confusion Matrix components
+    conf_dict = get_binary_confusion_matrix(y_true, y_pred_proba, threshold, pos_label)
+    
+    ## Compute classification error score and return it
+    tp = conf_dict["tp"]
+    fp = conf_dict["fp"]
+    fn = conf_dict["fn"]
+    tn = conf_dict["tn"]
+    fpr_score = float((fp)/(tn+fp))
+
+    return fpr_score
+
+## Compute BER and G-mean
+
+def get_ber_score(y_true: list, y_pred_proba: list, threshold: list=0.5, pos_label: int=1):
+    """
+    get_ber_score(y_true, y_pred_prob, threshold=0.5, pos_label=1)
+
+    Computes the Balanced Error Rate.
+    Taking the mean of the FNR and the TNR provides a balanced measure of 
+    accuracy known as the Balanced Error Rate (BER).
+    BER = 0.5*(FNR+FPR)
+
+    Args:
+        y_true(list or np.ndarray): True binary labels. Expected values are {0, 1}.
+        y_pred_proba(list or np.ndarray): Predicted probabilities for the positive class. Values should be in the range [0, 1]. Must be the same length as `y_true`.
+        threshold (float, default=0.5): The decision threshold to convert probabilities into binary predictions.
+        pos_label (float, default=1): The label of the positive class in `y_true`.
+
+    Returns:
+        Float (Balanced Error Rate)
+    """  
+
+    ## Get FNR and FPR
+    fnr = get_fnr_score(y_true, y_pred_proba, threshold, pos_label)
+    fpr = get_fpr_score(y_true, y_pred_proba, threshold, pos_label)
+
+    ## Compute BER from FNR and FPR
+    ber_score = 0.5*(fnr+fpr)
+    ber_score = float(ber_score)
+
+    return ber_score
 
