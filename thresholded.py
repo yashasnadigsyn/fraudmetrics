@@ -79,4 +79,61 @@ def get_binary_confusion_matrix(y_true: list, y_pred_proba: list, threshold: flo
 
     return {"tp": int(tp), "fp": int(fp), "fn": int(fn), "tn": int(tn)}
 
+def get_accuracy_score(y_true: list, y_pred_proba: list, threshold: list=0.5, pos_label: int=1):
+    """
+    accuracy_score(y_true, y_pred_prob, threshold=0.5, pos_label=1)
+
+    Computes the accuracy score. 
+    This function calculates accuracy score (TP + TN) / (TP + FP + FN + TN)
+
+    Args:
+        y_true(list or np.ndarray): True binary labels. Expected values are {0, 1}.
+        y_pred_proba(list or np.ndarray): Predicted probabilities for the positive class. Values should be in the range [0, 1]. Must be the same length as `y_true`.
+        threshold (float, default=0.5): The decision threshold to convert probabilities into binary predictions.
+        pos_label (float, default=1): The label of the positive class in `y_true`.
+
+    Returns:
+        Float (Accuracy)
+    """  
+
+    ## Get Binary Confusion Matrix components
+    conf_dict = get_binary_confusion_matrix(y_true, y_pred_proba, threshold, pos_label)
     
+    ## Compute accuracy score and return it
+    tp = conf_dict["tp"]
+    fp = conf_dict["fp"]
+    fn = conf_dict["fn"]
+    tn = conf_dict["tn"]
+    accuracy_score = float((tp+tn)/(tp+fp+fn+tn))
+
+    return accuracy_score
+
+def get_classification_error_score(y_true: list, y_pred_proba: list, threshold: list=0.5, pos_label: int=1):
+    """
+    get_classification_error_score(y_true, y_pred_prob, threshold=0.5, pos_label=1)
+
+    Computes the missclassification error score. 
+    This function calculates accuracy score (FP + FN) / (TP + FP + FN + TN)
+
+    Args:
+        y_true(list or np.ndarray): True binary labels. Expected values are {0, 1}.
+        y_pred_proba(list or np.ndarray): Predicted probabilities for the positive class. Values should be in the range [0, 1]. Must be the same length as `y_true`.
+        threshold (float, default=0.5): The decision threshold to convert probabilities into binary predictions.
+        pos_label (float, default=1): The label of the positive class in `y_true`.
+
+    Returns:
+        Float (Error Rate)
+    """  
+
+    ## Get Binary Confusion Matrix components
+    conf_dict = get_binary_confusion_matrix(y_true, y_pred_proba, threshold, pos_label)
+    
+    ## Compute classification error score and return it
+    tp = conf_dict["tp"]
+    fp = conf_dict["fp"]
+    fn = conf_dict["fn"]
+    tn = conf_dict["tn"]
+    classification_error_score = float((fp+fn)/(tp+fp+fn+tn))
+
+    return classification_error_score
+
