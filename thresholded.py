@@ -50,6 +50,7 @@ def get_binary_confusion_matrix(y_true: list, y_pred_proba: list, threshold: flo
     if len(y_true_arr) == 0:
         return {"tp": 0, "fp": 0, "fn": 0, "tn": 0}
 
+    ## Check if probs are between 0 and 1 in y_pred_proba
     if not np.all((y_pred_proba_arr >= 0) & (y_pred_proba_arr <= 1)):
         raise ValueError("All y_pred_proba values must be between 0 and 1 (inclusive).")
 
