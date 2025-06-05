@@ -17,7 +17,10 @@ def get_roc_auc_score(y_true: list, y_pred_proba: list, pos_label: int=1):
                                    Defaults to 1.
 
     Returns:
-        Float (AUC ROC value)
+        float: The AUC ROC value.
+        Returns 1.0 if all true instances belong to the positive class. 
+        Returns 0.0 if all true instances belong to the negative class.
+        Returns np.nan if inputs are empty
     """
 
     ## Check for Input Validation
