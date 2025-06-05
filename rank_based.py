@@ -3,7 +3,7 @@
 import numpy as np
 import pandas as pd
 from typing import Union, Any, Callable
-from utils.validate_inputs import validate_binary_inputs
+from utils.validate_inputs import _prepare_ranked_data
 
 def get_precision_at_topk(
     y_true: Union[list, np.ndarray],
@@ -35,33 +35,15 @@ def get_precision_at_topk(
         float: The precision@K score. Returns np.nan if k=0 or if inputs are empty
                and precision cannot be computed.
     """
-
-    ## Validate inputs
-    y_true_arr, y_pred_proba_arr = validate_binary_inputs(y_true, y_pred_proba, pos_label)
-
-    ## Handle empty case
-    if len(y_true) == 0:
+    try:
+        y_true_binary_sorted, validated_k = _prepare_ranked_data(y_true, y_pred_proba, k, pos_label)
+    except ValueError:
         return np.nan
     
-    ## Handle edge cases for k
-    if k < 0:
-        raise ValueError("k cannot be negative.")
-    if k == 0:
-        return np.nan
-    
-    k = min(k, len(y_true_arr))
-    
-    ## Convert y_true to binary 
-    y_true_binary = (y_true_arr == pos_label).astype(int)
-    
-    ## Sort scores and corresponding true labels
-    desc_score_indices = np.argsort(y_pred_proba_arr, kind="mergesort")[::-1]
-    y_true_binary_sorted = y_true_binary[desc_score_indices]
-
     ## Take topk values and compute precision_at_topk
-    y_true_topk = y_true_binary_sorted[:k]
+    y_true_topk = y_true_binary_sorted[:validated_k]
     tp_at_k = np.sum(y_true_topk)
-    precision_at_topk = float(tp_at_k/k)
+    precision_at_topk = float(tp_at_k / validated_k)
 
     return precision_at_topk
 
@@ -91,37 +73,25 @@ def get_recall_at_topk(
                                    Defaults to 1.
 
     Returns:
-        float: The precision@K score. Returns np.nan if k=0 or if inputs are empty
-               and precision cannot be computed.
+        float: The recall@K score. Returns np.nan if k=0 or if inputs are empty
+               and recall cannot be computed.
     """
-
-    ## Validate inputs
-    y_true_arr, y_pred_proba_arr = validate_binary_inputs(y_true, y_pred_proba, pos_label)
-
-    ## Handle empty case
-    if len(y_true) == 0:
+    try:
+        y_true_binary_sorted, validated_k = _prepare_ranked_data(y_true, y_pred_proba, k, pos_label)
+    except ValueError:
         return np.nan
     
-    ## Handle edge cases for k
-    if k < 0:
-        raise ValueError("k cannot be negative.")
-    if k == 0:
+    ## Calculate total actual positives from original unsorted data
+    y_true_arr = np.array(y_true)
+    total_actual_positives = np.sum(y_true_arr == pos_label)
+    
+    if total_actual_positives == 0:
         return np.nan
     
-    k = min(k, len(y_true_arr))
-    
-    ## Convert y_true to binary 
-    y_true_binary = (y_true_arr == pos_label).astype(int)
-    
-    ## Sort scores and corresponding true labels
-    desc_score_indices = np.argsort(y_pred_proba_arr, kind="mergesort")[::-1]
-    y_true_binary_sorted = y_true_binary[desc_score_indices]
-
     ## Take topk values and compute recall_at_topk
-    y_true_topk = y_true_binary_sorted[:k]
+    y_true_topk = y_true_binary_sorted[:validated_k]
     tp_at_k = np.sum(y_true_topk)
-    total_actual_positives = np.sum(y_true_arr)
-    recall_at_topk = float(tp_at_k/total_actual_positives)
+    recall_at_topk = float(tp_at_k / total_actual_positives)
 
     return recall_at_topk
 
@@ -240,7 +210,3 @@ def get_card_precision_at_topk(
     card_precision_at_topk = tp_entities_at_k / k
     
     return float(card_precision_at_topk)
-
-y_true_1 = np.array([1, 0, 1, 1, 0, 1, 0, 0, 1, 0])
-y_pred_proba_1 = np.array([0.9, 0.2, 0.8, 0.7, 0.3, 0.6, 0.4, 0.1, 0.75, 0.25])
-print(get_precision_at_topk(y_true_1, y_pred_proba_1, 5, 1))

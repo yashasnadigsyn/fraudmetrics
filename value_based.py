@@ -1,7 +1,8 @@
 ## Value Based Metrics
 
-from typing import Union, Any
+from typing import Union, Any, Tuple
 import numpy as np
+from utils.validate_inputs import _validate_value_inputs
 
 def value_captured_at_k(
     y_true: Union[list, np.ndarray],
@@ -34,33 +35,16 @@ def value_captured_at_k(
         float: The total monetary value of true positives captured in the top K.
                Returns 0.0 if k=0 or inputs are empty.
     """
-    ## Input Validation
-    if not isinstance(y_true, (list, np.ndarray)):
-        raise TypeError("y_true must be a list or NumPy array.")
-    if not isinstance(y_pred_proba, (list, np.ndarray)):
-        raise TypeError("y_pred_scores must be a list or NumPy array.")
-    if not isinstance(transaction_values, (list, np.ndarray)):
-        raise TypeError("transaction_values must be a list or NumPy array.")
-    if not isinstance(k, int):
-        raise TypeError(f"k must be an integer, not {type(k)}")
-
-    y_true_arr = np.array(y_true)
-    y_scores_arr = np.array(y_pred_proba)
-    trans_vals_arr = np.array(transaction_values)
-
-    if not (len(y_true_arr) == len(y_scores_arr) == len(trans_vals_arr)):
-        raise ValueError("All inputs (y_true, y_pred_scores, transaction_values) must have the same length.")
-
-    if len(y_true_arr) == 0:
+    try:
+        y_true_arr, y_scores_arr, trans_vals_arr, validated_k = _validate_value_inputs(
+            y_true, y_pred_proba, transaction_values, k
+        )
+    except (TypeError, ValueError):
+        raise  # Re-raise validation errors
+    
+    ## Handle empty inputs or k=0
+    if len(y_true_arr) == 0 or k == 0:
         return 0.0
-
-    if k < 0:
-        raise ValueError("k cannot be negative.")
-    if k == 0:
-        return 0.0
-
-    ## Cap k at the total number of samples
-    k = min(k, len(y_true_arr))
 
     ## Convert y_true to binary
     y_true_binary = (y_true_arr == pos_label).astype(int)
@@ -71,8 +55,8 @@ def value_captured_at_k(
     trans_vals_sorted = trans_vals_arr[desc_score_indices]
 
     ## Select the top K instances
-    y_true_topk = y_true_binary_sorted[:k]
-    trans_vals_topk = trans_vals_sorted[:k]
+    y_true_topk = y_true_binary_sorted[:validated_k]
+    trans_vals_topk = trans_vals_sorted[:validated_k]
 
     ## Calculate value captured
     value_captured = np.sum(trans_vals_topk[y_true_topk == 1])
@@ -103,27 +87,16 @@ def proportion_value_captured_at_k(
                Returns np.nan if total value of actual positives is zero or
                if k=0 or inputs are empty.
     """
-
-    ## Input Validation
-    if not isinstance(y_true, (list, np.ndarray)):
-        raise TypeError("y_true must be a list or NumPy array.")
-    if not isinstance(y_pred_proba, (list, np.ndarray)):
-        raise TypeError("y_pred_scores must be a list or NumPy array.")
-    if not isinstance(transaction_values, (list, np.ndarray)):
-        raise TypeError("transaction_values must be a list or NumPy array.")
-    if not isinstance(k, int):
-        raise TypeError(f"k must be an integer, not {type(k)}")
+    try:
+        y_true_arr, _, trans_vals_arr, _ = _validate_value_inputs(
+            y_true, y_pred_proba, transaction_values, k
+        )
+    except (TypeError, ValueError):
+        raise  # Re-raise validation errors
     
-    y_true_arr = np.array(y_true)
-    trans_vals_arr = np.array(transaction_values)
-    
-    if len(y_true_arr) == 0:
+    ## Handle empty inputs or k=0
+    if len(y_true_arr) == 0 or k == 0:
         return np.nan
-    if k < 0:
-         raise ValueError("k cannot be negative.")
-    if k == 0:
-        return np.nan 
-
 
     ## Binarize y_true to identify all actual positives
     y_true_binary = (y_true_arr == pos_label).astype(int)
@@ -166,22 +139,18 @@ def value_efficiency_at_k(
         float: Average value captured per instance in the top K.
                Returns np.nan if k=0. Returns 0.0 if inputs are empty.
     """
-    ## Input Validation
-    if not isinstance(y_true, (list, np.ndarray)):
-        raise TypeError("y_true must be a list or NumPy array.")
-    if not isinstance(y_pred_proba, (list, np.ndarray)):
-        raise TypeError("y_pred_scores must be a list or NumPy array.")
-    if not isinstance(transaction_values, (list, np.ndarray)):
-        raise TypeError("transaction_values must be a list or NumPy array.")
-    if not isinstance(k, int):
-        raise TypeError(f"k must be an integer, not {type(k)}")
-    if not isinstance(k, int) or k < 0:
-        raise ValueError("k must be a non-negative integer.")
+    try:
+        y_true_arr, _, _, _ = _validate_value_inputs(
+            y_true, y_pred_proba, transaction_values, k
+        )
+    except (TypeError, ValueError):
+        raise  # Re-raise validation errors
     
-    y_true_arr = np.array(y_true)
+    ## Handle empty inputs
     if len(y_true_arr) == 0:
         return 0.0 
 
+    ## Handle k=0
     if k == 0:
         return np.nan
 
