@@ -1,7 +1,7 @@
 ## Threshold Free Metrics
 
 import numpy as np
-from typing import Union, Any
+from typing import Union, Any, Tuple
 from utils.validate_inputs import validate_binary_inputs
 
 def get_roc_auc_score(
@@ -180,3 +180,157 @@ def get_AP_score(
         ap_score += delta_recall * precision_arr[i]
     
     return float(ap_score)
+
+def get_roc_curve_points(
+    y_true: Union[list, np.ndarray],
+    y_pred_proba: Union[list, np.ndarray],
+    pos_label: Any = 1
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Computes the points for the Receiver Operating Characteristic (ROC) curve.
+
+    Args:
+        y_true (Union[list, np.ndarray]): True labels.
+        y_pred_proba (Union[list, np.ndarray]): Predicted probabilities for the positive class.
+        pos_label (Any, optional): The label of the positive class. Defaults to 1.
+
+    Returns:
+        Tuple[np.ndarray, np.ndarray, np.ndarray]:
+            fpr_array: False positive rates.
+            tpr_array: True positive rates.
+            thresholds_array: Corresponding thresholds (predicted scores).
+    """
+    y_true_arr, y_pred_proba_arr = validate_binary_inputs(y_true, y_pred_proba, pos_label)
+
+    if len(y_true_arr) == 0:
+        return np.array([]), np.array([]), np.array([]) # Empty arrays if no data
+
+    y_true_binary = (y_true_arr == pos_label).astype(int)
+    num_positives = np.sum(y_true_binary == 1)
+    num_negatives = len(y_true_binary) - num_positives
+
+    if num_negatives == 0:
+        return np.array([0., 0., 1.]), np.array([0., 1., 1.]), np.array([np.inf, 0.5, -np.inf])
+    if num_positives == 0:
+        return np.array([0., 1., 1.]), np.array([0., 0., 1.]), np.array([np.inf, 0.5, -np.inf])
+
+    desc_score_indices = np.argsort(y_pred_proba_arr, kind="mergesort")[::-1]
+    y_pred_proba_sorted = y_pred_proba_arr[desc_score_indices]
+    y_true_binary_sorted = y_true_binary[desc_score_indices]
+
+    tp_count = 0
+    fp_count = 0
+    tpr_list = [0.0]
+    fpr_list = [0.0]
+    thresholds_for_plot = [np.inf]
+
+    last_score = np.inf
+
+    for i in range(len(y_pred_proba_sorted)):
+        current_score = y_pred_proba_sorted[i]
+        if current_score < last_score:
+            thresholds_for_plot.append(last_score)
+            tpr_list.append(tp_count / num_positives if num_positives > 0 else 0.0)
+            fpr_list.append(fp_count / num_negatives if num_negatives > 0 else 0.0)
+            last_score = current_score
+
+        if y_true_binary_sorted[i] == 1:
+            tp_count += 1
+        else:
+            fp_count += 1
+
+    thresholds_for_plot.append(last_score)
+    tpr_list.append(tp_count / num_positives if num_positives > 0 else 1.0)
+    fpr_list.append(fp_count / num_negatives if num_negatives > 0 else 1.0)
+
+
+    fpr_array = np.array(fpr_list)
+    tpr_array = np.array(tpr_list)
+    thresholds_array = np.array(thresholds_for_plot)
+    
+    unique_points_with_thresholds = sorted(list(set(zip(fpr_array, tpr_array, thresholds_array))), key=lambda x: (x[0], x[1]))
+    
+    if not unique_points_with_thresholds:
+         return np.array([0.,1.]), np.array([0.,1.]), np.array([np.inf, -np.inf]) 
+    
+    final_fpr = np.array([p[0] for p in unique_points_with_thresholds])
+    final_tpr = np.array([p[1] for p in unique_points_with_thresholds])
+    final_thresholds = np.array([p[2] for p in unique_points_with_thresholds])
+
+    return final_fpr, final_tpr, final_thresholds
+
+def get_pr_curve_points(
+    y_true: Union[list, np.ndarray],
+    y_pred_proba: Union[list, np.ndarray],
+    pos_label: Any = 1
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Computes the points for the Precision-Recall curve.
+
+    Args:
+        y_true (Union[list, np.ndarray]): True labels.
+        y_pred_proba (Union[list, np.ndarray]): Predicted probabilities for the positive class.
+        pos_label (Any, optional): The label of the positive class. Defaults to 1.
+
+    Returns:
+        Tuple[np.ndarray, np.ndarray, np.ndarray]:
+            precision_array: Precision values.
+            recall_array: Recall values.
+            thresholds_array: Corresponding thresholds (predicted scores).
+    """
+    y_true_arr, y_pred_proba_arr = validate_binary_inputs(y_true, y_pred_proba, pos_label)
+
+    if len(y_true_arr) == 0:
+        return np.array([]), np.array([]), np.array([])
+
+    y_true_binary = (y_true_arr == pos_label).astype(int)
+    num_positives = np.sum(y_true_binary)
+
+    if num_positives == 0:
+        return np.array([0.]), np.array([0.]), np.array([np.inf])
+
+    desc_indices = np.argsort(y_pred_proba_arr, kind="mergesort")[::-1]
+    y_true_sorted = y_true_binary[desc_indices]
+    y_pred_proba_sorted = y_pred_proba_arr[desc_indices]
+    
+    tp_count = 0
+    fp_count = 0
+    precision_list = []
+    recall_list = []
+    thresholds_for_plot = []
+    
+    distinct_score_indices = np.where(np.diff(y_pred_proba_sorted))[0] + 1
+    threshold_operational_indices = np.concatenate(([0], distinct_score_indices, [len(y_true_sorted)]))
+
+    if num_positives > 0:
+        precision_list.append(1.0)
+        recall_list.append(0.0)
+        thresholds_for_plot.append(np.inf if len(y_pred_proba_sorted) == 0 else y_pred_proba_sorted[0] + 1e-9)
+
+
+    for k_items in threshold_operational_indices:
+        if k_items == 0:
+            continue
+
+        current_y_true_segment = y_true_sorted[:k_items]
+        tp = np.sum(current_y_true_segment)
+        current_threshold = y_pred_proba_sorted[k_items-1]
+
+
+        if (tp + (k_items - tp)) > 0:
+            precision = tp / k_items
+        else:
+            precision = 1.0
+
+        recall = tp / num_positives
+
+        if not precision_list or recall != recall_list[-1] or precision != precision_list[-1]:
+            precision_list.append(precision)
+            recall_list.append(recall)
+            thresholds_for_plot.append(current_threshold)
+
+    precision_array = np.array(precision_list)
+    recall_array = np.array(recall_list)
+    thresholds_array = np.array(thresholds_for_plot)
+
+    return precision_array, recall_array, thresholds_array
