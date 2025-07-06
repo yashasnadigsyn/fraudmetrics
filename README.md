@@ -278,16 +278,6 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
-
-- Inspired by the need for comprehensive fraud detection evaluation
-- Built with best practices from scikit-learn and other ML libraries
-- Designed for practical business applications
-
-## 📞 Support
-
-If you have any questions or need help, please open an issue on GitHub or contact the maintainers.
-
 ---
 
 **Note**: This library is specifically designed for fraud detection and binary classification scenarios. For general multi-class classification, consider using scikit-learn's metrics module.
