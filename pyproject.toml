@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "fraudmetrics"
-version = "0.2.1"
+version = "0.3.0"
 description = "A comprehensive Python library for evaluating fraud detection models with specialized metrics for business impact analysis"
 readme = "README.md"
 requires-python = ">=3.11"
