@@ -262,14 +262,6 @@ def evaluate_fraud_model(y_true, y_pred_proba, transaction_values, thresholds=[0
     return results
 ```
 
-## 📋 Requirements
-
-- Python 3.11+
-- NumPy >= 2.3.1
-- Pandas >= 2.3.0
-- Matplotlib >= 3.10.3
-- Seaborn >= 0.13.2
-
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
